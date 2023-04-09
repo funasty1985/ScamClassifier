@@ -7,9 +7,7 @@ from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import ConfusionMatrixDisplay
-from nltk.stem.porter import PorterStemmer
 from nltk.stem.lancaster import LancasterStemmer
-from nltk.stem.snowball import SnowballStemmer
 from sklearn.model_selection import cross_val_score
 import matplotlib.pyplot as plt
 
@@ -52,7 +50,8 @@ def main():
     print(init_features_df.info())
     print("\nunique values of the first column : ")
     print(init_features_df.iloc[:, 0].unique())
-    print("\nnqiue vales of the first row:", list(set([ele for ele in init_features[0]])))
+    print("\nunique vales of the first row:")
+    print(list(set([ele for ele in init_features[0]])))
 
     ## 5) Downscale the transformed data ##  (final_features exploration incompleted) ##
     # used to find the importance of the words
@@ -66,7 +65,8 @@ def main():
     print(scaled_features_df.info())
     print("\nunique values of the first column : ")
     print(scaled_features_df.iloc[:, 0].unique())
-    print("\nunique vales of the first row:", list(set([ele for ele in final_features[0]])))
+    print("\nunique vales of the first row:")
+    print(list(set([ele for ele in final_features[0]])))
 
     ## 6) shuffle the dataset (done)  ##   (completed)
     # turn the final_features d-array to panada data_frame
@@ -90,7 +90,7 @@ def main():
     clf.fit(X_train, y_train)
 
     ## 9) Cross validate
-    print("\n\n#################################### Cross Validation ###############################################")
+    print("\n\n#################################### Cross Validation With Training Data ###############################################")
     num_folds = 5
     scores = cross_val_score(clf, X_train, y_train, scoring='accuracy', cv=num_folds)
     print(f"\n\n\nCross validation on training data")
@@ -99,8 +99,9 @@ def main():
     print(f"maximum scorce: {scores.max()}\n")
 
     ## 10) ## Test the model on the test data, print the confusion matrix and the accuracy of the model. ## (to do)
+    print("\n\n#################################### Testing With Testing Data ###############################################")
     y_pred = clf.predict(X_test)
-    print("\n\n\nthe accuracy_score of test data : ", accuracy_score(y_test, y_pred))
+    print("\nthe accuracy_score of test data : ", accuracy_score(y_test, y_pred))
     cm = confusion_matrix(y_test, y_pred, labels=[0, 1])
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[0, 1])
     disp.plot()
