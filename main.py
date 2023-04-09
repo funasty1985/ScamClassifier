@@ -8,13 +8,22 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import ConfusionMatrixDisplay
 from nltk.stem.lancaster import LancasterStemmer
+from sklearn.model_selection import cross_val_score
+import matplotlib.pyplot as plt
 
 
 def main():
     ## 1) Load the data into a pandas data frame. ## (done)
     data = pd.read_csv(r'Youtube03-LMFAO.csv')
 
-    ## 2) .....(To Do)
+    ## 2) .....# Show the first 5 rows of the data
+    print("#################################### Initial Data ###############################################")
+    print("\nThe shape of the initial loaded data : ", data.shape)
+    print("\nThe first five rows of the initial loaded data : ", data.head())
+    # Show information about the data, such as column names and data types
+    print("\ncolumns info of the initial loaded data : ")
+    print(data.info())
+    data = data[["CONTENT", "CLASS"]]
 
     ## 3) prepare the data for model building ## (done)
     pd.set_option('display.max_columns', None)
@@ -23,6 +32,7 @@ def main():
 
     # remove stop words
     lancaster = LancasterStemmer()
+
     data["TOKENS"] = data["CONTENT"].apply(word_tokenize)
     data["TOKENS"] = data["TOKENS"].apply(lambda tokens: [token for token in tokens if token.lower() not in stop_words])
     data["TOKENS"] = data["TOKENS"].apply(lambda tokens: [lancaster.stem(token) for token in tokens])
@@ -31,31 +41,47 @@ def main():
     # create the word_count vector
     vectorizer = CountVectorizer()
     init_features = vectorizer.fit_transform(data["TOKENS_STR"]).toarray()
+    init_features_df = pd.DataFrame(init_features, columns=vectorizer.get_feature_names_out())
 
     ## 4) explore initial features (not completed)
-    print("Values bigger than zero:", [ele for ele in init_features[0] if ele > 0])
+    print("\n\n#################################### Initial Feature ###############################################")
+    print("\nThe shape of the initial feature : ", init_features_df.shape)
+    print("\ncolumns info of the initial feature : ")
+    print(init_features_df.info())
+    print("\nunique values of the first column : ")
+    print(init_features_df.iloc[:, 0].unique())
+    print("\nunique vales of the first row:")
+    print(list(set([ele for ele in init_features[0]])))
 
     ## 5) Downscale the transformed data ##  (final_features exploration incompleted) ##
     # used to find the importance of the words
     tfidf = TfidfTransformer()
-    final_features= tfidf.fit_transform(init_features)
-    print("Values bigger tha zero after downscaling : ",[ele for ele in final_features.toarray()[0] if ele > 0])   ## compare to line 16
+    final_features = tfidf.fit_transform(init_features).toarray()
+    scaled_features_df = pd.DataFrame(final_features)
+
+    print("\n\n#################################### Scaled Feature ###############################################")
+    print("\nThe shape of the scaled feature : ", scaled_features_df.shape)
+    print("\ncolumns info of the scaled feature : ")
+    print(scaled_features_df.info())
+    print("\nunique values of the first column : ")
+    print(scaled_features_df.iloc[:, 0].unique())
+    print("\nunique vales of the first row:")
+    print(list(set([ele for ele in final_features[0]])))
 
     ## 6) shuffle the dataset (done)  ##   (completed)
     # turn the final_features d-array to panada data_frame
-    scaled_features_df = pd.DataFrame(final_features.toarray())
     # concat scaled_features_df and data["CLASS"] to form a new data frame
-    combined_pd = pd.concat([scaled_features_df, data["CLASS"]], axis=1)
+    combined_df = pd.concat([scaled_features_df, data["CLASS"]], axis=1)
     # shuffle the data set
-    combined_pd = combined_pd.sample(frac=1, random_state=1)
+    combined_df = combined_df.sample(frac=1, random_state=1)
 
     ## 7) split the data withwout using test_train_ split  ##
-    training_pd = combined_pd.sample(frac=0.75,random_state=1)
-    testing_pd = combined_pd.drop(training_pd.index)
+    training_pd = combined_df.sample(frac=0.75, random_state=1)
+    testing_pd = combined_df.drop(training_pd.index)
 
-    X_train = training_pd.drop(columns=["CLASS"])
+    X_train = training_pd.drop(columns=["CLASS"], axis=1)
     y_train = training_pd["CLASS"]
-    X_test = testing_pd.drop(columns=["CLASS"])
+    X_test = testing_pd.drop(columns=["CLASS"], axis=1)
     y_test = testing_pd["CLASS"]
 
     ## 8) Fit the training data into a Naive Bayes classifier.  ##
@@ -63,18 +89,60 @@ def main():
     clf = MultinomialNB()
     clf.fit(X_train, y_train)
 
-    ## 9) ## Cross validate ##         (to do)
+    ## 9) Cross validate
+    print("\n\n#################################### Cross Validation With Training Data ###############################################")
+    num_folds = 5
+    scores = cross_val_score(clf, X_train, y_train, scoring='accuracy', cv=num_folds)
+    print(f"\n\n\nCross validation on training data")
+    print(f"mean score: {scores.mean()}")
+    print(f"minimum score: {scores.min()}")
+    print(f"maximum scorce: {scores.max()}\n")
+
     ## 10) ## Test the model on the test data, print the confusion matrix and the accuracy of the model. ## (to do)
+    print("\n\n#################################### Testing With Testing Data ###############################################")
+    y_pred = clf.predict(X_test)
+    print("\nthe accuracy_score of test data : ", accuracy_score(y_test, y_pred))
+    cm = confusion_matrix(y_test, y_pred, labels=[0, 1])
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[0, 1])
+    disp.plot()
+    plt.title("Confusion matrix of the model on testing data")
+    plt.show()
+
     ## 11) come up with 6 new comments (4 comments should be non spam and 2 comment spam)   ## (to do)
+    print("\n\n#################################### Testing With Custom Comments ###############################################")
+    custom_data = pd.read_csv(r'custom_comment.csv')
+    custom_data["CONTENT"] = custom_data["CONTENT"].str.lower()
+    print(custom_data.head(6))
+    stop_words = set(stopwords.words("english"))
+    # remove stop words
+    lancaster = LancasterStemmer()
+
+    custom_data["TOKENS"] = custom_data["CONTENT"].apply(word_tokenize)
+    custom_data["TOKENS"] = custom_data["TOKENS"].apply(lambda tokens: [token for token in tokens if token.lower() not in stop_words])
+    custom_data["TOKENS"] = custom_data["TOKENS"].apply(lambda tokens: [lancaster.stem(token) for token in tokens])
+    custom_data["TOKENS_STR"] = custom_data["TOKENS"].apply(lambda tokens: " ".join(tokens))
+
+    # create the word_count vector
+    # have to use old vectorizer, otherwise feature words count will be different
+    # here we use transform but not transform_fit
+    custom_data_init_features = vectorizer.transform(custom_data["TOKENS_STR"])
+
+    # used to find the importance of the words
+    custom_data_final_features = tfidf.transform(custom_data_init_features)
+    y = custom_data["CLASS"]
+
+    custom_y_pred = clf.predict(custom_data_final_features)
+    print("\n\nthe accuracy score of the custom test data : ", accuracy_score(y, custom_y_pred))
+    cm = confusion_matrix(y, custom_y_pred, labels=[0, 1])
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[0, 1])
+    disp.plot()
+    plt.title("Confusion matrix of the model on custom testing data")
+    plt.show()
+
     ## 12) Present all the results and conclusions ##
 
     ## useful for 10)
     # Compute prediction
-    y_pred = clf.predict(X_test)
-    print("the accuracy_score is : ", accuracy_score(y_test, y_pred))
-    cm = confusion_matrix(y_test, y_pred, labels=[0, 1])
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[0,1])
-    disp.plot()
 
 if __name__ == "__main__":
     main()
