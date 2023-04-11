@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from sklearn.naive_bayes import MultinomialNB
@@ -14,8 +15,9 @@ import matplotlib.pyplot as plt
 
 def main():
     ## 1) Load the data into a pandas data frame. ## (done)
-    data = pd.read_csv(r'Youtube03-LMFAO.csv')
 
+    filename = 'Youtube03-LMFAO.csv'
+    data = pd.read_csv(filename)
     ## 2) .....# Show the first 5 rows of the data
     print("#################################### Initial Data ###############################################")
     print("\nThe shape of the initial loaded data : ", data.shape)
@@ -52,6 +54,40 @@ def main():
     print(init_features_df.iloc[:, 0].unique())
     print("\nunique vales of the first row:")
     print(list(set([ele for ele in init_features[0]])))
+
+    print("Values bigger than zero:", [ele for ele in init_features[0] if ele > 0])
+    print("Shape of FEATURES array:", init_features.shape)
+    print("Size of vocabulary:", len(vectorizer.vocabulary_))
+    print("Top 10 words in vocabulary:", list(vectorizer.vocabulary_.keys())[:10])
+
+    number_of_unique_words = len(vectorizer.vocabulary_)
+
+    print("\nNumber of unique words:", number_of_unique_words)
+
+    non_zero_values = vectorizer.fit_transform(data["TOKENS_STR"]).data
+
+    print("\nNon zero values:", non_zero_values)
+
+    # print("\nFeature names:", vectorizer.get_feature_names_out())
+
+    sparse_matrix_stats = pd.Series(non_zero_values).describe()
+
+    print("\nSummary statistics of the sparse matrix:", sparse_matrix_stats)
+
+    scam_words = ['huh', 'sexy', 'free gift', 'download', 'visit']
+    print("Generated Scam Words:", scam_words)
+
+    scam_data = []
+
+    for i, row in data.iterrows():
+        for word in scam_words:
+            if word in row['CONTENT'].lower():
+                scam_data.append(row)
+                break
+
+    # Print the number of rows of scam data found
+    print(f"Found {len(scam_data)} rows of scam data")
+    print(scam_data)
 
     ## 5) Downscale the transformed data ##  (final_features exploration incompleted) ##
     # used to find the importance of the words
@@ -90,7 +126,8 @@ def main():
     clf.fit(X_train, y_train)
 
     ## 9) Cross validate
-    print("\n\n#################################### Cross Validation With Training Data ###############################################")
+    print(
+        "\n\n#################################### Cross Validation With Training Data ###############################################")
     num_folds = 5
     scores = cross_val_score(clf, X_train, y_train, scoring='accuracy', cv=num_folds)
     print(f"\n\n\nCross validation on training data")
@@ -99,7 +136,8 @@ def main():
     print(f"maximum scorce: {scores.max()}\n")
 
     ## 10) ## Test the model on the test data, print the confusion matrix and the accuracy of the model. ## (to do)
-    print("\n\n#################################### Testing With Testing Data ###############################################")
+    print(
+        "\n\n#################################### Testing With Testing Data ###############################################")
     y_pred = clf.predict(X_test)
     print("\nthe accuracy_score of test data : ", accuracy_score(y_test, y_pred))
     cm = confusion_matrix(y_test, y_pred, labels=[0, 1])
@@ -109,16 +147,19 @@ def main():
     plt.show()
 
     ## 11) come up with 6 new comments (4 comments should be non spam and 2 comment spam)   ## (to do)
-    print("\n\n#################################### Testing With Custom Comments ###############################################")
-    custom_data = pd.read_csv(r'custom_comment.csv')
+    print(
+        "\n\n#################################### Testing With Custom Comments ###############################################")
+    filename = r'custom_comment.csv'
+    custom_data = pd.read_csv(r'custom_comment.csv', on_bad_lines='error')
     custom_data["CONTENT"] = custom_data["CONTENT"].str.lower()
-    print(custom_data.head(6))
+    print(custom_data)
     stop_words = set(stopwords.words("english"))
     # remove stop words
     lancaster = LancasterStemmer()
 
     custom_data["TOKENS"] = custom_data["CONTENT"].apply(word_tokenize)
-    custom_data["TOKENS"] = custom_data["TOKENS"].apply(lambda tokens: [token for token in tokens if token.lower() not in stop_words])
+    custom_data["TOKENS"] = custom_data["TOKENS"].apply(
+        lambda tokens: [token for token in tokens if token.lower() not in stop_words])
     custom_data["TOKENS"] = custom_data["TOKENS"].apply(lambda tokens: [lancaster.stem(token) for token in tokens])
     custom_data["TOKENS_STR"] = custom_data["TOKENS"].apply(lambda tokens: " ".join(tokens))
 
@@ -132,7 +173,6 @@ def main():
     y = custom_data["CLASS"]
 
     custom_y_pred = clf.predict(custom_data_final_features)
-    print("\n\nthe accuracy score of the custom test data : ", accuracy_score(y, custom_y_pred))
     cm = confusion_matrix(y, custom_y_pred, labels=[0, 1])
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[0, 1])
     disp.plot()
@@ -140,10 +180,22 @@ def main():
     plt.show()
 
     ## 12) Present all the results and conclusions ##
+    category_map = {
+        "1": 'Spam',
+        "0": 'Ham',
+    }
+    custom_y_pred_categories = [category_map[str(pred)] for pred in custom_y_pred]
 
-    ## useful for 10)
-    # Compute prediction
+    # Print the categories of the custom test data
+    print("\n\nCustom Test Data Predictions:")
+    for i in range(len(custom_data)):
+
+        if custom_y_pred_categories[i] == 'Ham':
+            print(f"{custom_data['CONTENT'][i]}: HAM")
+        else:
+            print(f"{custom_data['CONTENT'][i]}: SPAM")
+
+    print("\n\nthe accuracy score of the custom test data : ", accuracy_score(y, custom_y_pred))
 
 if __name__ == "__main__":
     main()
-
