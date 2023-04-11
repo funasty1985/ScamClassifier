@@ -43,7 +43,7 @@ def main():
     init_features = vectorizer.fit_transform(data["TOKENS_STR"]).toarray()
     init_features_df = pd.DataFrame(init_features, columns=vectorizer.get_feature_names_out())
 
-    ## 4) explore initial features (not completed)
+    ## 4) explore initial features (Added - need verification)
     print("\n\n#################################### Initial Feature ###############################################")
     print("\nThe shape of the initial feature : ", init_features_df.shape)
     print("\ncolumns info of the initial feature : ")
@@ -52,6 +52,15 @@ def main():
     print(init_features_df.iloc[:, 0].unique())
     print("\nunique vales of the first row:")
     print(list(set([ele for ele in init_features[0]])))
+
+
+    number_of_unique_words = len(vectorizer.vocabulary_)
+    print("\nNumber of unique words:", number_of_unique_words)
+    non_zero_values = vectorizer.fit_transform(data["TOKENS_STR"]).data
+    print("\nNon zero values:", non_zero_values)
+    print("\nFeature names:",vectorizer.get_feature_names())
+    sparse_matrix_stats = pd.Series(non_zero_values).describe()
+    print("\nSummary statistics of the sparse matrix:", sparse_matrix_stats)
 
     ## 5) Downscale the transformed data ##  (final_features exploration incompleted) ##
     # used to find the importance of the words
