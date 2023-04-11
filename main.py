@@ -45,7 +45,7 @@ def main():
     init_features = vectorizer.fit_transform(data["TOKENS_STR"]).toarray()
     init_features_df = pd.DataFrame(init_features, columns=vectorizer.get_feature_names_out())
 
-    ## 4) explore initial features (not completed)
+    ## 4) explore initial features
     print("\n\n#################################### Initial Feature ###############################################")
     print("\nThe shape of the initial feature : ", init_features_df.shape)
     print("\ncolumns info of the initial feature : ")
