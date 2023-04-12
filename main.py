@@ -14,12 +14,14 @@ import matplotlib.pyplot as plt
 
 
 def main():
-    ## 1) Load the data into a pandas data frame. ## (done)
+    ## 1) Load the data into a pandas data frame
 
     filename = 'Youtube03-LMFAO.csv'
     data = pd.read_csv(filename)
-    ## 2) .....# Show the first 5 rows of the data
+
+    ## 2) initial data exploration
     print("#################################### Initial Data ###############################################")
+    pd.set_option('display.max_columns', None)
     print("\nThe shape of the initial loaded data : ", data.shape)
     print("\nThe first five rows of the initial loaded data : ", data.head())
     # Show information about the data, such as column names and data types
@@ -28,10 +30,8 @@ def main():
     data = data[["CONTENT", "CLASS"]]
 
     ## 3) prepare the data for model building ## (done)
-    pd.set_option('display.max_columns', None)
     data["CONTENT"] = data["CONTENT"].str.lower()
     stop_words = set(stopwords.words("english"))
-
     # remove stop words
     lancaster = LancasterStemmer()
 
@@ -68,6 +68,7 @@ def main():
 
     print("\nNon zero values:", non_zero_values)
 
+    # print("\nFeature names:", vectorizer.get_feature_names())
     # print("\nFeature names:", vectorizer.get_feature_names_out())
 
     sparse_matrix_stats = pd.Series(non_zero_values).describe()
@@ -149,7 +150,6 @@ def main():
     ## 11) come up with 6 new comments (4 comments should be non spam and 2 comment spam)   ## (to do)
     print(
         "\n\n#################################### Testing With Custom Comments ###############################################")
-    filename = r'custom_comment.csv'
     custom_data = pd.read_csv(r'custom_comment.csv', on_bad_lines='error')
     custom_data["CONTENT"] = custom_data["CONTENT"].str.lower()
     print(custom_data)
